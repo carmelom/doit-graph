@@ -85,12 +85,51 @@ Website/docs: https://github.com/pydoit/doit-graph
         return task.subtask_of or task_name
 
 
-    def add_edge(self, src_name, sink_name, arrowhead):
+    def add_edge(self, src_name, sink_name, arrowhead, label=None):
         source = self.node(src_name)
         sink = self.node(sink_name)
-        if source != sink and (source, sink) not in self._edges:
-            self._edges.add((source, sink))
-            self.graph.add_edge(source, sink, arrowhead=arrowhead)
+        if source != sink:
+            edge_key = (source, sink)
+            # If edge already exists, append to label
+            if edge_key in self._edges:
+                if label:
+                    existing_edge = self.graph.get_edge(source, sink)
+                    existing_label = existing_edge.attr.get('label', '')
+                    if existing_label:
+                        new_label = existing_label + '\\n' + label
+                    else:
+                        new_label = label
+                    existing_edge.attr['label'] = new_label
+            else:
+                self._edges.add(edge_key)
+                edge_attrs = {'arrowhead': arrowhead}
+                if label:
+                    edge_attrs['label'] = label
+                self.graph.add_edge(source, sink, **edge_attrs)
+
+
+    def get_connecting_files(self, src_task_name, sink_task_name):
+        """Find which files connect two tasks (file_dep of src that are in targets of sink)"""
+        from pathlib import Path
+        
+        src_task = self.tasks.get(src_task_name)
+        sink_task = self.tasks.get(sink_task_name)
+        
+        if not src_task or not sink_task:
+            return []
+        
+        # Get file dependencies and targets
+        src_file_deps = set()
+        if hasattr(src_task, 'file_dep') and src_task.file_dep:
+            src_file_deps = {Path(str(f)).name for f in src_task.file_dep}
+        
+        sink_targets = set()
+        if hasattr(sink_task, 'targets') and sink_task.targets:
+            sink_targets = {Path(str(t)).name for t in sink_task.targets}
+        
+        # Find intersection
+        connecting_files = src_file_deps & sink_targets
+        return sorted(connecting_files)
 
 
     def _execute(self, subtasks, reverse, horizontal, outfile, pos_args=None):
@@ -130,11 +169,15 @@ Website/docs: https://github.com/pydoit/doit-graph
 
             # add edges
             for sink_name in task.setup_tasks:
-                self.add_edge(task.name, sink_name, arrowhead='empty')
+                connecting_files = self.get_connecting_files(task.name, sink_name)
+                label = '\\n'.join(connecting_files) if connecting_files else None
+                self.add_edge(task.name, sink_name, arrowhead='empty', label=label)
                 if sink_name not in processed:
                     to_process.append(sink_name)
             for sink_name in task.task_dep:
-                self.add_edge(task.name, sink_name, arrowhead='')
+                connecting_files = self.get_connecting_files(task.name, sink_name)
+                label = '\\n'.join(connecting_files) if connecting_files else None
+                self.add_edge(task.name, sink_name, arrowhead='', label=label)
                 if sink_name not in processed:
                     to_process.append(sink_name)
 
