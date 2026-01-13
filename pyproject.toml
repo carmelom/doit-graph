@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "doit-graph"
+version = "0.3.0"
+description = "doit cmd plugin: create task's dependency-graph image"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Eduardo Naufel Schettino"}
+]
+keywords = ["doit", "graph", "graphviz"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Operating System :: POSIX",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Intended Audience :: Developers",
+]
+requires-python = ">=3.5"
+dependencies = [
+    "doit",
+    "pygraphviz",
+]
+
+[project.urls]
+Homepage = "http://github.com/pydoit/doit-graph"
+
+[project.entry-points."doit.COMMAND"]
+graph = "doit_graph:GraphCmd"
+
+[tool.setuptools]
+py-modules = ["doit_graph"]
