@@ -31,6 +31,15 @@ opt_reverse = {
     "help": "draw edge in execution order, i.e. the reverse of dependency direction",
 }
 
+opt_labels = {
+    "name": "labels",
+    "short": "",
+    "long": "labels",
+    "type": bool,
+    "default": False,
+    "help": "label the edges with the file_dep/targets dependencies filenames",
+}
+
 opt_horizontal = {
     "name": "horizontal",
     "short": "h",
@@ -68,7 +77,7 @@ Website/docs: https://github.com/pydoit/doit-graph
     """
     doc_usage = "[TASK ...]"
 
-    cmd_options = (opt_subtasks, opt_outfile, opt_reverse, opt_horizontal)
+    cmd_options = (opt_subtasks, opt_outfile, opt_labels, opt_reverse, opt_horizontal)
 
     def node(self, task_name):
         """get graph node that should represent for task_name
@@ -125,7 +134,7 @@ Website/docs: https://github.com/pydoit/doit-graph
         connecting_files = src_file_deps & sink_targets
         return sorted(connecting_files)
 
-    def _execute(self, subtasks, reverse, horizontal, outfile, pos_args=None):
+    def _execute(self, subtasks, reverse, horizontal, outfile, labels, pos_args=None):
         # init
         control = TaskControl(self.task_list)
         self.tasks = control.tasks
@@ -162,14 +171,20 @@ Website/docs: https://github.com/pydoit/doit-graph
 
             # add edges
             for sink_name in task.setup_tasks:
-                connecting_files = self.get_connecting_files(task.name, sink_name)
-                label = "\\n".join(connecting_files) if connecting_files else None
+                if labels:
+                    connecting_files = self.get_connecting_files(task.name, sink_name)
+                    label = "\\n".join(connecting_files) if connecting_files else None
+                else:
+                    label = None
                 self.add_edge(task.name, sink_name, arrowhead="empty", label=label)
                 if sink_name not in processed:
                     to_process.append(sink_name)
             for sink_name in task.task_dep:
-                connecting_files = self.get_connecting_files(task.name, sink_name)
-                label = "\\n".join(connecting_files) if connecting_files else None
+                if labels:
+                    connecting_files = self.get_connecting_files(task.name, sink_name)
+                    label = "\\n".join(connecting_files) if connecting_files else None
+                else:
+                    label = None
                 self.add_edge(task.name, sink_name, arrowhead="", label=label)
                 if sink_name not in processed:
                     to_process.append(sink_name)
