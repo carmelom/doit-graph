@@ -100,7 +100,8 @@ Website/docs: https://github.com/pydoit/doit-graph
                     existing_edge = self.graph.get_edge(source, sink)
                     existing_label = existing_edge.attr.get("label", "")
                     if existing_label:
-                        new_label = existing_label + "\\n" + label
+                        new_label = set(existing_label.split("\\n")) | set(label.split("\\n"))
+                        new_label = "\\n".join(sorted(new_label))
                     else:
                         new_label = label
                     existing_edge.attr["label"] = new_label
